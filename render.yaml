@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: openNAMU
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: chmod +x start.sh && ./start.sh
+    envVars:
+      - key: NAMU_DB_TYPE
+        value: postgresql
+      - key: NAMU_HOST
+        value: 0.0.0.0
+      - key: NAMU_PORT
+        value: 10000
+      - key: NAMU_LANG
+        value: ko-KR
+      - key: NAMU_MARKUP
+        value: namumark
+      - key: NAMU_ENCRYPT
+        value: sha3
+      - key: NAMU_POSTGRESQL_HOST
+        fromDatabase:
+          name: openNAMU-db
+          property: host
+      - key: NAMU_POSTGRESQL_PORT
+        fromDatabase:
+          name: openNAMU-db
+          property: port
+      - key: NAMU_POSTGRESQL_USER
+        fromDatabase:
+          name: openNAMU-db
+          property: user
+      - key: NAMU_POSTGRESQL_PASSWORD
+        fromDatabase:
+          name: openNAMU-db
+          property: password
+      - key: DATABASE_URL
+        fromDatabase:
+          name: openNAMU-db
+          property: connectionString
+
+databases:
+  - name: openNAMU-db
+    databaseName: wiki_db
+    user: wiki_user
+    plan: free
