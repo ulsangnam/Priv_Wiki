@@ -229,8 +229,10 @@ with get_db_connect(init_mode = True) as conn:
         server_set_val = curs.fetchall()
         if server_set_val:
             server_set_val = server_set_val[0][0]
-            # 강제로 host를 127.0.0.1로 설정
-            if i == 'host':
+            # Render 환경에서는 0.0.0.0으로 설정
+            if i == 'host' and os.getenv('RENDER'):
+                server_set_val = '0.0.0.0'
+            elif i == 'host':
                 server_set_val = '127.0.0.1'
             print(f"DEBUG: Found {i} in DB: {server_set_val}")
         elif server_set_env[i] != None:

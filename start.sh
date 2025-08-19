@@ -1,16 +1,31 @@
 #!/bin/bash
+set -e  # Exit on any error
+
+echo "=== openNAMU Deployment Script ==="
+
+# Add local bin to PATH to resolve pip warning
+export PATH="/root/.local/bin:$PATH"
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-sleep 10
+sleep 15
 
 # Set default database name if not provided
 export NAMU_DB=${NAMU_DB:-wiki_db}
 
+echo "Environment variables:"
+echo "NAMU_POSTGRESQL_HOST: ${NAMU_POSTGRESQL_HOST}"
+echo "NAMU_POSTGRESQL_PORT: ${NAMU_POSTGRESQL_PORT}"
+echo "NAMU_POSTGRESQL_USER: ${NAMU_POSTGRESQL_USER}"
+echo "NAMU_DB: ${NAMU_DB}"
+
+# Create data directory
+mkdir -p data
+echo "Created data directory"
+
 # Create database configuration if it doesn't exist
 if [ ! -f "data/postgresql.json" ]; then
     echo "Creating PostgreSQL configuration..."
-    mkdir -p data
     cat > data/postgresql.json << EOF
 {
     "user": "${NAMU_POSTGRESQL_USER}",
@@ -19,6 +34,9 @@ if [ ! -f "data/postgresql.json" ]; then
     "port": "${NAMU_POSTGRESQL_PORT}"
 }
 EOF
+    echo "PostgreSQL configuration created"
+else
+    echo "PostgreSQL configuration already exists"
 fi
 
 # Create set.json configuration if it doesn't exist
@@ -30,8 +48,16 @@ if [ ! -f "data/set.json" ]; then
     "db": "${NAMU_DB}"
 }
 EOF
+    echo "set.json configuration created"
+else
+    echo "set.json configuration already exists"
 fi
 
+# Verify Python and required modules
+echo "Python version: $(python --version)"
+echo "Checking required modules..."
+python -c "import psycopg2; print('psycopg2 available')" || echo "Warning: psycopg2 not available"
+
 # Start the application
-echo "Starting openNAMU..."
-python app.py
+echo "Starting openNAMU application..."
+exec python app.py
