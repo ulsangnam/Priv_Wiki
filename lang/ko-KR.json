@@ -709,5 +709,9 @@
     "move_bottom_text" : "이동 하단 문구",
     "delete_bottom_text" : "삭제 하단 문구",
     "revert_bottom_text" : "되돌리기 하단 문구",
-    "warning_restart" : "재시작 중... 새로고침(F5)를 눌러주세요"
+    "warning_restart" : "재시작 중... 새로고침(F5)를 눌러주세요",
+    "challenge_success" : "도전 과제를 달성했습니다.",
+    "challenge_fail" : "도전 과제를 달성하지 못했습니다.",
+    "chat_parser" : "카카오톡 대화 파서",
+    "chat_parser_desc" : "카카오톡 대화 내용을 위키 페이지로 변환합니다."
 }

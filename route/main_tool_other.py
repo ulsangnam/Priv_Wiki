@@ -50,6 +50,7 @@ async def main_tool_other():
                 <h2>''' + get_lang(conn, 'admin') + '''</h2>
                 <ul>
                     <li><a href="/manager/1">''' + get_lang(conn, 'admin_tool') + '''</a></li>
+                    <li><a href="/tool_chat_parser">''' + get_lang(conn, 'chat_parser') + '''</a></li>
                 </ul>
             '''),
             menu = 0

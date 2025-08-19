@@ -216,10 +216,14 @@ with get_db_connect(init_mode = True) as conn:
         server_set_val = curs.fetchall()
         if server_set_val:
             server_set_val = server_set_val[0][0]
+            # 강제로 host를 127.0.0.1로 설정
+            if i == 'host':
+                server_set_val = '127.0.0.1'
+            print(f"DEBUG: Found {i} in DB: {server_set_val}")
         elif server_set_env[i] != None:
             server_set_val = server_set_env[i]
 
-            curs.execute(db_change('insert into other (name, data, coverage) values (?, ?, "")'), [i, server_set_env[i]])
+            curs.execute(db_change('insert into other (name, data) values (?, ?)'), [i, server_set_env[i]])
         else:
             if 'list' in server_set_var[i]:
                 print(server_set_var[i]['display'] + ' (' + server_set_var[i]['default'] + ') [' + ', '.join(server_set_var[i]['list']) + ']' + ' : ', end = '')
@@ -233,14 +237,14 @@ with get_db_connect(init_mode = True) as conn:
                 if not server_set_val in server_set_var[i]['list']:
                     server_set_val = server_set_var[i]['default']
 
-            curs.execute(db_change('insert into other (name, data, coverage) values (?, ?, "")'), [i, server_set_val])
+            curs.execute(db_change('insert into other (name, data) values (?, ?)'), [i, server_set_val])
 
         print(server_set_var[i]['display'] + ' : ' + server_set_val)
 
         server_set[i] = server_set_val
-        
-for for_a in server_set:
-    global_some_set_do('setup_' + for_a, server_set[for_a])
+    
+    for for_a in server_set:
+        global_some_set_do('setup_' + for_a, server_set[for_a])
 
 ###
 
@@ -971,6 +975,14 @@ signal.signal(signal.SIGINT, signal_handler)
 atexit.register(terminate_golang)
 
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for = 1, x_proto = 1)
+
+# 카카오톡 대화 파서 라우트 추가
+from route.tool_chat_parser import chat_parser_main, chat_parser_submit
+from route.tool_json_upload import tool_json_upload
+
+app.add_url_rule('/tool_chat_parser', 'tool_chat_parser', chat_parser_main, methods=['GET'])
+app.add_url_rule('/tool_chat_parser_submit', 'tool_chat_parser_submit', chat_parser_submit, methods=['POST'])
+app.add_url_rule('/tool_json_upload', 'tool_json_upload', tool_json_upload, methods=['GET', 'POST'])
 
 if __name__ == "__main__":
     if run_mode in ['dev']:

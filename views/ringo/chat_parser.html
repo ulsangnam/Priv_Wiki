@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>카카오톡 대화 파서 - {{ config('wiki_name') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
+    <style>
+        .chat-parser-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .chat-textarea {
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .preview-section {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .result-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .result-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .result-error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .example-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/">{{ config('wiki_name') }}</a></li>
+                        <li class="breadcrumb-item"><a href="/admin">관리</a></li>
+                        <li class="breadcrumb-item active">카카오톡 대화 파서</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+        
+        <div class="chat-parser-container">
+            <h1>카카오톡 대화 파서</h1>
+            <p class="text-muted">카카오톡 대화 내용을 붙여넣으면 자동으로 위키 페이지를 생성합니다.</p>
+            
+            <div class="form-section">
+                <form id="chatParserForm">
+                    <div class="form-group">
+                        <label for="wiki_title">위키 페이지 제목</label>
+                        <input type="text" class="form-control" id="wiki_title" name="wiki_title" 
+                               value="카카오톡 대화 기록" placeholder="생성할 위키 페이지의 제목을 입력하세요">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="chat_text">카카오톡 대화 내용</label>
+                        <textarea class="form-control chat-textarea" id="chat_text" name="chat_text" 
+                                  placeholder="카카오톡 대화 내용을 여기에 붙여넣으세요..."></textarea>
+                        <div class="example-text">
+                            <strong>예시 형식:</strong><br>
+                            2025년 7월 28일 오후 12:45<br>
+                            2025년 7월 28일 오후 12:45, 박종민님이 송재협님, 유용상16님을 초대했습니다.<br>
+                            2025년 7월 28일 오후 12:45, 박종민 : 안녕하세요<br>
+                            2025년 7월 28일 오후 12:46, 송재협 : 반갑습니다
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="loading spinner-border spinner-border-sm" role="status"></span>
+                            위키 페이지 생성
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="previewBtn">미리보기</button>
+                        <button type="button" class="btn btn-outline-secondary" id="clearBtn">초기화</button>
+                    </div>
+                </form>
+                
+                <div id="resultMessage" class="result-message" style="display: none;"></div>
+            </div>
+            
+            <div id="previewSection" class="preview-section" style="display: none;">
+                <h3>미리보기</h3>
+                <div id="previewContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            // 폼 제출 처리
+            $('#chatParserForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const chatText = $('#chat_text').val().trim();
+                const wikiTitle = $('#wiki_title').val().trim();
+                
+                if (!chatText) {
+                    showResult('대화 내용을 입력해주세요.', 'error');
+                    return;
+                }
+                
+                if (!wikiTitle) {
+                    showResult('위키 페이지 제목을 입력해주세요.', 'error');
+                    return;
+                }
+                
+                // 로딩 상태 표시
+                $('#submitBtn .loading').show();
+                $('#submitBtn').prop('disabled', true);
+                
+                // AJAX 요청
+                $.ajax({
+                    url: '/tool_chat_parser_submit',
+                    method: 'POST',
+                    data: {
+                        chat_text: chatText,
+                        wiki_title: wikiTitle
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showResult(
+                                response.message + '<br>' +
+                                '<a href="' + response.wiki_url + '" class="btn btn-sm btn-success mt-2">생성된 페이지 보기</a>',
+                                'success'
+                            );
+                            $('#chat_text').val('');
+                        } else {
+                            showResult(response.error || '알 수 없는 오류가 발생했습니다.', 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        showResult('서버 오류가 발생했습니다: ' + error, 'error');
+                    },
+                    complete: function() {
+                        $('#submitBtn .loading').hide();
+                        $('#submitBtn').prop('disabled', false);
+                    }
+                });
+            });
+            
+            // 미리보기 버튼
+            $('#previewBtn').on('click', function() {
+                const chatText = $('#chat_text').val().trim();
+                
+                if (!chatText) {
+                    showResult('대화 내용을 입력해주세요.', 'error');
+                    return;
+                }
+                
+                // 간단한 클라이언트 사이드 미리보기
+                const lines = chatText.split('\n');
+                let previewHtml = '<h4>파싱 결과 미리보기</h4>';
+                let messageCount = 0;
+                
+                lines.forEach(function(line) {
+                    line = line.trim();
+                    if (line && line.includes(' : ')) {
+                        messageCount++;
+                        const parts = line.split(' : ');
+                        if (parts.length >= 2) {
+                            const speaker = parts[0].split(', ').pop();
+                            const message = parts.slice(1).join(' : ');
+                            previewHtml += '<p><strong>' + speaker + '</strong>: ' + message + '</p>';
+                        }
+                    }
+                });
+                
+                previewHtml += '<hr><small>총 ' + messageCount + '개의 메시지가 감지되었습니다.</small>';
+                
+                $('#previewContent').html(previewHtml);
+                $('#previewSection').show();
+            });
+            
+            // 초기화 버튼
+            $('#clearBtn').on('click', function() {
+                $('#chat_text').val('');
+                $('#wiki_title').val('카카오톡 대화 기록');
+                $('#previewSection').hide();
+                $('#resultMessage').hide();
+            });
+            
+            // 결과 메시지 표시 함수
+            function showResult(message, type) {
+                const $result = $('#resultMessage');
+                $result.removeClass('result-success result-error');
+                $result.addClass('result-' + type);
+                $result.html(message);
+                $result.show();
+                
+                // 3초 후 자동 숨김 (에러가 아닌 경우)
+                if (type === 'success') {
+                    setTimeout(function() {
+                        $result.fadeOut();
+                    }, 5000);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

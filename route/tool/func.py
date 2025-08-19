@@ -199,7 +199,7 @@ def get_init_set_list(need = 'all'):
         'host' : {
             'display' : 'Host',
             'require' : 'conv',
-            'default' : '0.0.0.0'
+            'default' : '127.0.0.1'
         }, 'port' : {
             'display' : 'Port',
             'require' : 'conv',
@@ -248,8 +248,13 @@ class get_db_connect:
         
     def __enter__(self):
         if self.db_set['db_type'] == 'sqlite':
+            import os
+            db_path = os.path.join(os.getcwd(), 'data', self.db_set['db_name'] + '.db')
+            print(f'Trying to connect to: {db_path}')
+            print(f'File exists: {os.path.exists(db_path)}')
+            print(f'Current working directory: {os.getcwd()}')
             self.conn = sqlite3.connect(
-                self.db_set['db_name'] + '.db',
+                db_path,
                 check_same_thread = False,
                 isolation_level = None
             )
