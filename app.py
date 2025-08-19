@@ -211,6 +211,19 @@ with get_db_connect(init_mode = True) as conn:
         'markup' : os.getenv('NAMU_MARKUP'),
         'encode' : os.getenv('NAMU_ENCRYPT')
     }
+    
+    # PostgreSQL 환경 변수 설정
+    postgresql_env = {
+        'db_postgresql_host': os.getenv('NAMU_POSTGRESQL_HOST'),
+        'db_postgresql_port': os.getenv('NAMU_POSTGRESQL_PORT'),
+        'db_postgresql_user': os.getenv('NAMU_POSTGRESQL_USER'),
+        'db_postgresql_pw': os.getenv('NAMU_POSTGRESQL_PASSWORD')
+    }
+    
+    # PostgreSQL 환경 변수가 설정되어 있으면 global_some_set에 추가
+    for key, value in postgresql_env.items():
+        if value is not None:
+            global_some_set_do(key, value)
     for i in server_set_var:
         curs.execute(db_change('select data from other where name = ?'), [i])
         server_set_val = curs.fetchall()

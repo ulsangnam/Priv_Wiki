@@ -89,6 +89,12 @@ try:
 except:
     import pymysql
 
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    psycopg2 = None
+
 if sys.version_info < (3, 6):
     import sha3
 
@@ -245,6 +251,9 @@ class get_db_connect:
         if self.db_set['db_type'] == 'mysql':
             for for_a in ("db_mysql_host", "db_mysql_user", "db_mysql_pw", "db_mysql_port"):
                 self.db_set[for_a] = global_some_set_do(for_a)
+        elif self.db_set['db_type'] == 'postgresql':
+            for for_a in ("db_postgresql_host", "db_postgresql_user", "db_postgresql_pw", "db_postgresql_port"):
+                self.db_set[for_a] = global_some_set_do(for_a)
         
     def __enter__(self):
         if self.db_set['db_type'] == 'sqlite':
@@ -258,7 +267,7 @@ class get_db_connect:
                 check_same_thread = False,
                 isolation_level = None
             )
-        else:
+        elif self.db_set['db_type'] == 'mysql':
             if self.init_mode:
                 self.conn = pymysql.connect(
                     host = self.db_set['db_mysql_host'],
@@ -278,6 +287,26 @@ class get_db_connect:
                     autocommit = True,
                     db = self.db_set['db_name']
                 )
+        elif self.db_set['db_type'] == 'postgresql':
+            if psycopg2 is None:
+                raise ImportError("psycopg2 is required for PostgreSQL support")
+            
+            if self.init_mode:
+                self.conn = psycopg2.connect(
+                    host = self.db_set['db_postgresql_host'],
+                    user = self.db_set['db_postgresql_user'],
+                    password = self.db_set['db_postgresql_pw'],
+                    port = int(self.db_set['db_postgresql_port'])
+                )
+            else:
+                self.conn = psycopg2.connect(
+                    host = self.db_set['db_postgresql_host'],
+                    user = self.db_set['db_postgresql_user'],
+                    password = self.db_set['db_postgresql_pw'],
+                    port = int(self.db_set['db_postgresql_port']),
+                    database = self.db_set['db_name']
+                )
+            self.conn.autocommit = True
 
         return self.conn
     
@@ -306,7 +335,7 @@ class class_check_json:
             
             if not os.path.exists(os.path.join('data', 'set.json')):
                 set_data = {}
-                normal_db_type = ['sqlite', 'mysql']
+                normal_db_type = ['sqlite', 'mysql', 'postgresql']
 
                 print('DB type (' + normal_db_type[0] + ') [' + ', '.join(normal_db_type) + '] : ', end = '')
                 data_get = str(input())
@@ -391,6 +420,56 @@ class class_check_json:
             data_db_set['mysql_port'] = '3306'
             
         return data_db_set
+
+    def do_check_postgresql_json(self, data_db_set):
+        if os.path.exists(os.path.join('data', 'postgresql.json')):
+            db_set_list = ['user', 'password', 'host', 'port']
+            with open(os.path.join('data', 'postgresql.json'), encoding = 'utf8') as file_data:
+                set_data = json_loads(file_data.read())
+
+            for i in db_set_list:
+                if not i in set_data:
+                    os.remove(os.path.join('data', 'postgresql.json'))
+                    
+                    break
+
+            set_data_postgresql = set_data
+
+        if not os.path.exists(os.path.join('data', 'postgresql.json')):
+            set_data_postgresql = {}
+
+            print('PostgreSQL DB user ID : ', end = '')
+            set_data_postgresql['user'] = str(input())
+
+            print('PostgreSQL DB password : ', end = '')
+            set_data_postgresql['password'] = str(input())
+
+            print('PostgreSQL DB host (localhost) : ', end = '')
+            set_data_postgresql['host'] = str(input())
+            if set_data_postgresql['host'] == '':
+                set_data_postgresql['host'] = 'localhost'
+
+            print('PostgreSQL DB port (5432) : ', end = '')
+            set_data_postgresql['port'] = str(input())
+            if set_data_postgresql['port'] == '':
+                set_data_postgresql['port'] = '5432'
+
+            with open(os.path.join('data', 'postgresql.json'), 'w', encoding = 'utf8') as f:
+                f.write(json_dumps(set_data_postgresql))
+
+        data_db_set['postgresql_user'] = set_data_postgresql['user']
+        data_db_set['postgresql_pw'] = set_data_postgresql['password']
+        if 'host' in set_data_postgresql:
+            data_db_set['postgresql_host'] = set_data_postgresql['host']
+        else:
+            data_db_set['postgresql_host'] = 'localhost'
+
+        if 'port' in set_data_postgresql:
+            data_db_set['postgresql_port'] = set_data_postgresql['port']
+        else:
+            data_db_set['postgresql_port'] = '5432'
+            
+        return data_db_set
     
     def __init__(self):
         self.data_db_set = {}
@@ -401,6 +480,8 @@ class class_check_json:
         cls.data_db_set = instance.do_check_set_json()
         if cls.data_db_set['type'] == 'mysql':
             cls.data_db_set = instance.do_check_mysql_json(cls.data_db_set)
+        elif cls.data_db_set['type'] == 'postgresql':
+            cls.data_db_set = instance.do_check_postgresql_json(cls.data_db_set)
         
         return cls.data_db_set
 

@@ -13,3 +13,4 @@ diff-match-patch
 pillow
 
 pymysql
+psycopg2-binary

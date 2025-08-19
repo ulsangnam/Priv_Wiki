@@ -1,7 +1,6 @@
 FROM python:3.11.10-slim
 
-MAINTAINER 2du <min08101@naver.com>
-MAINTAINER hoparkgo9ma <me@ho9.me>
+
 
 ENV NAMU_DB_TYPE sqlite
 ENV NAMU_DB data
@@ -12,6 +11,12 @@ ENV NAMU_LANG en-US
 ENV NAMU_MARKUP namumark
 ENV NAMU_ENCRYPT sha3
 ENV NAMU_DOCKER O
+
+# PostgreSQL environment variables
+ENV NAMU_POSTGRESQL_HOST localhost
+ENV NAMU_POSTGRESQL_PORT 5432
+ENV NAMU_POSTGRESQL_USER postgres
+ENV NAMU_POSTGRESQL_PASSWORD password
 
 ADD . /app
 WORKDIR /app
