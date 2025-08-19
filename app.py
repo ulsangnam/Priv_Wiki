@@ -237,6 +237,9 @@ with get_db_connect(init_mode = True) as conn:
             print(f"DEBUG: Found {i} in DB: {server_set_val}")
         elif server_set_env[i] != None:
             server_set_val = server_set_env[i]
+            # Render 환경에서 PORT 환경 변수 사용
+            if i == 'port' and os.getenv('PORT'):
+                server_set_val = os.getenv('PORT')
 
             curs.execute(db_change('insert into other (name, data) values (?, ?)'), [i, server_set_env[i]])
         else:

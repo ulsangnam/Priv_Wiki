@@ -8,7 +8,7 @@ export PATH="/root/.local/bin:$PATH"
 
 # Wait for database to be ready
 echo "Waiting for database to be ready..."
-sleep 15
+sleep 20
 
 # Set default database name if not provided
 export NAMU_DB=${NAMU_DB:-wiki_db}
@@ -18,6 +18,7 @@ echo "NAMU_POSTGRESQL_HOST: ${NAMU_POSTGRESQL_HOST}"
 echo "NAMU_POSTGRESQL_PORT: ${NAMU_POSTGRESQL_PORT}"
 echo "NAMU_POSTGRESQL_USER: ${NAMU_POSTGRESQL_USER}"
 echo "NAMU_DB: ${NAMU_DB}"
+echo "PORT: ${PORT}"
 
 # Create data directory
 mkdir -p data
@@ -57,6 +58,12 @@ fi
 echo "Python version: $(python --version)"
 echo "Checking required modules..."
 python -c "import psycopg2; print('psycopg2 available')" || echo "Warning: psycopg2 not available"
+python -c "import flask; print('Flask version:', flask.__version__)"
+python -c "import hypercorn; print('Hypercorn available')"
+
+# Set the port from Render's PORT environment variable
+export NAMU_PORT=${PORT:-10000}
+echo "Using port: ${NAMU_PORT}"
 
 # Start the application
 echo "Starting openNAMU application..."
