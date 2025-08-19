@@ -3,7 +3,7 @@ services:
     name: openNAMU
     env: python
     plan: free
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt --no-warn-script-location
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt --no-warn-script-location
     startCommand: chmod +x start.sh && ./start.sh
     envVars:
       - key: RENDER
